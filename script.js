@@ -272,7 +272,12 @@ async function sendMessage(text) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({
+  messages: chat.messages.slice(-16).map(({ role, content }) => ({
+    role,
+    content
+  }))
+})
     });
 
     let data;
