@@ -1503,3 +1503,29 @@ body.light-atmosphere .grid-bg {
     max-width: 95%;
   }
 }
+
+
+.message.assistant.is-streaming::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 1.1em;
+  margin-left: 5px;
+  vertical-align: -2px;
+  border-radius: 3px;
+  background: #a78bfa;
+  box-shadow: 0 0 10px #a78bfa, 0 0 20px #8b5cf6;
+  animation: nexora-cursor 0.8s steps(2, start) infinite;
+}
+
+@keyframes nexora-cursor {
+  to {
+    opacity: 0.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message.assistant.is-streaming::after {
+    animation: none;
+  }
+}
