@@ -1331,3 +1331,97 @@ body.light-atmosphere .grid-bg {
 .assistant strong {
   font-weight: 650;
 }
+
+
+.message.assistant {
+  display: block;
+  line-height: 1.8;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.message.assistant p {
+  margin: 0 0 1em;
+}
+
+.message.assistant h1,
+.message.assistant h2,
+.message.assistant h3,
+.message.assistant h4 {
+  line-height: 1.35;
+  margin: 1.25em 0 0.55em;
+  font-weight: 700;
+}
+
+.message.assistant h1:first-child,
+.message.assistant h2:first-child,
+.message.assistant h3:first-child {
+  margin-top: 0;
+}
+
+.message.assistant ul,
+.message.assistant ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0 1em;
+}
+
+.message.assistant li {
+  margin: 0.35em 0;
+}
+
+.message.assistant hr {
+  border: 0;
+  border-top: 1px solid #ffffff25;
+  margin: 1.25em 0;
+}
+
+.message.assistant blockquote {
+  border-left: 3px solid #818cf8;
+  margin: 1em 0;
+  padding-left: 1em;
+  opacity: 0.9;
+}
+
+.message.assistant pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 14px;
+  border-radius: 10px;
+  background: #11131b;
+  overflow-x: auto;
+}
+
+.message.assistant code {
+  font-family: monospace;
+}
+
+.message.assistant :not(pre) > code {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: #ffffff12;
+}
+
+.nexora-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.nexora-table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: left;
+}
+
+.nexora-table th,
+.nexora-table td {
+  padding: 10px 12px;
+  border: 1px solid #ffffff25;
+  vertical-align: top;
+}
+
+.nexora-table th {
+  font-weight: 700;
+  background: #ffffff0b;
+}
+
