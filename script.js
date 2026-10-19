@@ -105,6 +105,119 @@ function addMessage(text, role, conversation = getActiveConversation()) {
   conversation.messages.push(message);
   conversation.updatedAt = Date.now();
 
+  
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[char]);
+}
+
+function formatInline(text) {
+  let html = escapeHtml(text);
+
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+  html = html.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+
+  return html;
+}
+
+function renderMarkdown(text) {
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  const output = [];
+  let paragraph = [];
+  let i = 0;
+
+  function flushParagraph() {
+    if (paragraph.length) {
+      output.push('<p>' +
+        formatInline(paragraph.join(' ')) +
+        '</p>');
+      paragraph = [];
+    }
+  }
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^\s*```/.test(line)) {
+      flushParagraph();
+      i++;
+      const code = [];
+
+      while (i < lines.length && !/^\s*```/.test(lines[i])) {
+        code.push(lines[i++]);
+      }
+
+      if (i < lines.length) i++;
+
+      output.push('<pre><code>' +
+        escapeHtml(code.join('\n')) +
+        '</code></pre>');
+      continue;
+    }
+
+    if (!line.trim()) {
+      flushParagraph();
+      i++;
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,3})\s+(.+)/);
+
+    if (heading) {
+      flushParagraph();
+      const level = heading[1].length;
+      output.push(`<h${level}>${formatInline(heading[2])}</h${level}>`);
+      i++;
+      continue;
+    }
+
+    if (/^\s*[-*+]\s+/.test(line)) {
+      flushParagraph();
+      output.push('<ul>');
+
+      while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) {
+        output.push('<li>' +
+          formatInline(lines[i].replace(/^\s*[-*+]\s+/, '')) +
+          '</li>');
+        i++;
+      }
+
+      output.push('</ul>');
+      continue;
+    }
+
+    if (/^\s*\d+\.\s+/.test(line)) {
+      flushParagraph();
+      output.push('<ol>');
+
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        output.push('<li>' +
+          formatInline(lines[i].replace(/^\s*\d+\.\s+/, '')) +
+          '</li>');
+        i++;
+      }
+
+      output.push('</ol>');
+      continue;
+    }
+
+    paragraph.push(line.trim());
+    i++;
+  }
+
+  flushParagraph();
+  return output.join('\n');
+}
+
+
   renderMessages();
   renderHistory();
   saveConversations();
@@ -125,9 +238,13 @@ function renderMessages() {
   );
 
   for (const message of messages) {
-    const bubble = document.createElement('div');
+    const  = document.createElement('div');
     bubble.className = `message ${message.role}`;
-    bubble.textContent = message.content;
+    if (message.role === 'assistant') {
+  bubble.innerHTML = renderMarkdown(message.content);
+} else {
+  bubble.textContent = message.content;
+}
     elements.messages.appendChild(bubble);
   }
 
