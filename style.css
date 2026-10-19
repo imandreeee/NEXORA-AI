@@ -36,6 +36,18 @@ body {
   overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
+  .message.assistant pre {
+white-space: pre-wrap;
+overflow-wrap: anywhere;
+padding: 12px;
+border-radius: 10px;
+background: #11131b;
+overflow-x: auto;
+}
+.message.assistant code {
+font-family: monospace;
+}
+</CodeBlock>
   font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
