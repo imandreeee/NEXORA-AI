@@ -716,10 +716,13 @@ async function readGroqStream(response, chat) {
 }
 
 
-  } catch (error) {
-    console.error('NEXORA API:', error);
-    loading.textContent = 'Non riesco a collegarmi a NEXORA AI. Controlla la connessione e riprova.';
-    loading.classList.add('error');
+  
+} catch (error) {
+  console.error('NEXORA API:', error);
+  loading.textContent = 'Errore NEXORA: ' + error.message;
+  loading.classList.add('error');
+}
+
   } finally {
     setBusy(false);
     elements.prompt.focus();
