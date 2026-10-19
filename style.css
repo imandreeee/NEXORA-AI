@@ -1300,3 +1300,19 @@ body.light-atmosphere .grid-bg {
   }
 }
 
+
+/* NEXORA AI — testo più leggibile */
+.message {
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.message.assistant {
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+}
+
+.message.assistant strong {
+  font-weight: 650;
+}
