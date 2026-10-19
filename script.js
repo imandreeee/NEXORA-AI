@@ -378,6 +378,56 @@ function showLoading() {
   return bubble;
 }
 
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function streamAssistantMessage(content, chat) {
+  const message = {
+    id: createId(),
+    role: 'assistant',
+    content: ''
+  };
+
+  chat.messages.push(message);
+
+  const bubble = document.createElement('div');
+  bubble.className = 'message assistant';
+  bubble.setAttribute('aria-label', 'Risposta di NEXORA AI');
+  elements.messages.appendChild(bubble);
+
+  // Mostra progressivamente il testo senza richiamare l'API.
+  const chunkSize = 5;
+
+  for (let i = 0; i < content.length; i += chunkSize) {
+    message.content = content.slice(0, i + chunkSize);
+
+    if (window.marked && window.DOMPurify) {
+      const html = window.marked.parse(message.content, {
+        gfm: true,
+        breaks: true
+      });
+
+      bubble.innerHTML = window.DOMPurify.sanitize(html);
+    } else {
+      bubble.textContent = message.content;
+    }
+
+    elements.messages.scrollTop = elements.messages.scrollHeight;
+
+    await sleep(12);
+  }
+
+  message.content = content;
+  chat.updatedAt = Date.now();
+
+  saveConversations();
+  renderHistory();
+  renderMessages();
+}
+
+
 async function sendMessage(text) {
   const message = text.trim();
   if (!message || isSending) return;
@@ -437,16 +487,7 @@ async function sendMessage(text) {
       throw new Error('La risposta AI è vuota.');
     }
 
-    chat.messages.push({
-      id: createId(),
-      role: 'assistant',
-      content: data.reply
-    });
-
-    chat.updatedAt = Date.now();
-    saveConversations();
-    renderHistory();
-    renderMessages();
+    await streamAssistantMessage(data.reply, chat);
 
   } catch (error) {
     console.error('NEXORA API:', error);
