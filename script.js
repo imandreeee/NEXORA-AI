@@ -383,6 +383,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+
 async function streamAssistantMessage(content, chat) {
   const message = {
     id: createId(),
@@ -393,15 +394,33 @@ async function streamAssistantMessage(content, chat) {
   chat.messages.push(message);
 
   const bubble = document.createElement('div');
-  bubble.className = 'message assistant';
+  bubble.className = 'message assistant is-streaming';
   bubble.setAttribute('aria-label', 'Risposta di NEXORA AI');
   elements.messages.appendChild(bubble);
 
-  // Mostra progressivamente il testo senza richiamare l'API.
-  const chunkSize = 5;
+  // Velocità dinamica: più lenta sulle pause, più rapida nel testo normale.
+  let i = 0;
 
-  for (let i = 0; i < content.length; i += chunkSize) {
-    message.content = content.slice(0, i + chunkSize);
+  while (i < content.length) {
+    const remaining = content.length - i;
+    const current = content[i];
+
+    let chunkSize = remaining > 500 ? 7 : remaining > 180 ? 5 : 3;
+    let delay = remaining > 500 ? 5 : remaining > 180 ? 9 : 14;
+
+    if (/[.!?…]/.test(current)) {
+      chunkSize = 1;
+      delay = 100;
+    } else if (/[,;:]/.test(current)) {
+      chunkSize = 1;
+      delay = 55;
+    } else if (current === '\n') {
+      chunkSize = 1;
+      delay = 70;
+    }
+
+    i = Math.min(i + chunkSize, content.length);
+    message.content = content.slice(0, i);
 
     if (window.marked && window.DOMPurify) {
       const html = window.marked.parse(message.content, {
@@ -416,9 +435,12 @@ async function streamAssistantMessage(content, chat) {
 
     elements.messages.scrollTop = elements.messages.scrollHeight;
 
-    await sleep(12);
+    if (i < content.length) {
+      await sleep(delay);
+    }
   }
 
+  bubble.classList.remove('is-streaming');
   message.content = content;
   chat.updatedAt = Date.now();
 
@@ -426,6 +448,7 @@ async function streamAssistantMessage(content, chat) {
   renderHistory();
   renderMessages();
 }
+
 
 
 async function sendMessage(text) {
