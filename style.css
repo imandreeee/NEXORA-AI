@@ -629,7 +629,7 @@ a {
 
 /* CHAT */
 
-.messages {
+.s {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -638,11 +638,11 @@ a {
   padding: 26px 0;
 }
 
-.messages:empty {
+.s:empty {
   display: none;
 }
 
-.message {
+. {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -650,11 +650,11 @@ a {
   animation: rise-in .35s var(--ease) both;
 }
 
-.message.user {
+..user {
   justify-content: flex-end;
 }
 
-.message-content {
+.-content {
   max-width: min(82%, 660px);
   padding: 15px 17px;
   border: 1px solid var(--line);
@@ -666,14 +666,14 @@ a {
   overflow-wrap: anywhere;
 }
 
-.message.user .message-content {
+..user .-content {
   border-color: rgba(167,139,250,.22);
   border-radius: 16px 5px 16px 16px;
   background: linear-gradient(135deg, rgba(99,75,164,.25), rgba(31,38,63,.5));
   color: #f4f0ff;
 }
 
-.message-avatar {
+.-avatar {
   display: grid;
   place-items: center;
   width: 30px;
@@ -687,14 +687,14 @@ a {
   font-weight: 700;
 }
 
-.message.user .message-avatar {
+..user .-avatar {
   order: 2;
   border-color: rgba(103,232,249,.2);
   background: rgba(103,232,249,.08);
   color: var(--cyan);
 }
 
-.message-label {
+.-label {
   display: block;
   margin-bottom: 6px;
   color: #a9a0d6;
@@ -703,16 +703,16 @@ a {
   letter-spacing: 1px;
 }
 
-.message.user .message-label {
+..user .-label {
   color: #a8dce5;
 }
 
-.message-content p + p {
+.-content p + p {
   margin-top: 10px;
 }
 
-.message-content ul,
-.message-content ol {
+.-content ul,
+.-content ol {
   margin: 9px 0 9px 19px;
 }
 
@@ -1204,22 +1204,22 @@ body.light-atmosphere .grid-bg {
     font-size: 7px;
   }
 
-  .messages {
+  .s {
     gap: 18px;
     padding: 20px 0;
   }
 
-  .message {
+  . {
     gap: 8px;
   }
 
-  .message-content {
+  .-content {
     max-width: 88%;
     padding: 12px 13px;
     font-size: 12px;
   }
 
-  .message-avatar {
+  .-avatar {
     width: 27px;
     height: 27px;
   }
@@ -1302,17 +1302,20 @@ body.light-atmosphere .grid-bg {
 
 
 /* NEXORA AI — testo più leggibile */
-.message {
+. {
   line-height: 1.75;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-.message.assistant {
+.assistant {
   line-height: 1.8;
   letter-spacing: 0.01em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 }
 
-.message.assistant strong {
+.assistant strong {
   font-weight: 650;
 }
