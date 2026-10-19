@@ -282,10 +282,19 @@ function renderMessages() {
     bubble.className = `message ${message.role}`;
 
     if (message.role === 'assistant') {
-      bubble.innerHTML = renderMarkdown(message.content);
-    } else {
-      bubble.textContent = message.content;
-    }
+  if (window.marked && window.DOMPurify) {
+    const html = window.marked.parse(message.content, {
+      gfm: true,
+      breaks: true
+    });
+
+    bubble.innerHTML = window.DOMPurify.sanitize(html);
+  } else {
+    bubble.textContent = message.content;
+  }
+} else {
+  bubble.textContent = message.content;
+}
 
     elements.messages.appendChild(bubble);
   }
