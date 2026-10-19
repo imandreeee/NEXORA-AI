@@ -450,6 +450,116 @@ async function streamAssistantMessage(content, chat) {
 }
 
 
+async function readGroqStream(response, chat) {
+  if (!response.body) {
+    throw new Error('Streaming non supportato dal browser.');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+
+  const message = {
+    id: createId(),
+    role: 'assistant',
+    content: ''
+  };
+
+  chat.messages.push(message);
+
+  const bubble = document.createElement('div');
+  bubble.className = 'message assistant is-streaming';
+  bubble.setAttribute('aria-label', 'Risposta di NEXORA AI');
+  elements.messages.appendChild(bubble);
+
+  function updateBubble() {
+    if (window.marked && window.DOMPurify) {
+      const html = window.marked.parse(fullText, {
+        gfm: true,
+        breaks: true
+      });
+
+      bubble.innerHTML = window.DOMPurify.sanitize(html);
+    } else {
+      bubble.textContent = fullText;
+    }
+
+    elements.messages.scrollTop = elements.messages.scrollHeight;
+  }
+
+  function processEvent(eventText) {
+    for (const line of eventText.split('\n')) {
+      if (!line.startsWith('data:')) continue;
+
+      const data = line.slice(5).trim();
+      if (!data || data === '[DONE]') continue;
+
+      let packet;
+
+      try {
+        packet = JSON.parse(data);
+      } catch {
+        continue;
+      }
+
+      const delta = packet.choices?.[0]?.delta?.content;
+
+      if (typeof delta === 'string' && delta.length) {
+        fullText += delta;
+        message.content = fullText;
+        updateBubble();
+      }
+    }
+  }
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+
+      buffer += decoder.decode(value || new Uint8Array(), {
+        stream: !done
+      });
+
+      const events = buffer.split(/\r?\n\r?\n/);
+      buffer = events.pop() || '';
+
+      for (const eventText of events) {
+        processEvent(eventText);
+      }
+
+      if (done) break;
+    }
+
+    if (buffer.trim()) {
+      processEvent(buffer);
+    }
+
+    if (!fullText.trim()) {
+      throw new Error('NEXORA non ha ricevuto una risposta dal modello.');
+    }
+
+    message.content = fullText;
+    chat.updatedAt = Date.now();
+    bubble.classList.remove('is-streaming');
+
+    saveConversations();
+    renderHistory();
+  } catch (error) {
+    if (fullText.trim()) {
+      message.content = fullText;
+      saveConversations();
+    } else {
+      chat.messages = chat.messages.filter(item => item.id !== message.id);
+      bubble.remove();
+    }
+
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 
 async function sendMessage(text) {
   const message = text.trim();
@@ -494,23 +604,117 @@ async function sendMessage(text) {
       })
     });
 
-    let data;
+    
+async function readGroqStream(response, chat) {
+  if (!response.body) {
+    throw new Error('Streaming non supportato dal browser.');
+  }
 
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error('Il server ha restituito una risposta non valida.');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+
+  const message = {
+    id: createId(),
+    role: 'assistant',
+    content: ''
+  };
+
+  chat.messages.push(message);
+
+  const bubble = document.createElement('div');
+  bubble.className = 'message assistant is-streaming';
+  bubble.setAttribute('aria-label', 'Risposta di NEXORA AI');
+  elements.messages.appendChild(bubble);
+
+  function updateBubble() {
+    if (window.marked && window.DOMPurify) {
+      const html = window.marked.parse(fullText, {
+        gfm: true,
+        breaks: true
+      });
+
+      bubble.innerHTML = window.DOMPurify.sanitize(html);
+    } else {
+      bubble.textContent = fullText;
     }
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Il servizio AI ha restituito un errore.');
+    elements.messages.scrollTop = elements.messages.scrollHeight;
+  }
+
+  function processEvent(eventText) {
+    for (const line of eventText.split('\n')) {
+      if (!line.startsWith('data:')) continue;
+
+      const data = line.slice(5).trim();
+      if (!data || data === '[DONE]') continue;
+
+      let packet;
+
+      try {
+        packet = JSON.parse(data);
+      } catch {
+        continue;
+      }
+
+      const delta = packet.choices?.[0]?.delta?.content;
+
+      if (typeof delta === 'string' && delta.length) {
+        fullText += delta;
+        message.content = fullText;
+        updateBubble();
+      }
+    }
+  }
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+
+      buffer += decoder.decode(value || new Uint8Array(), {
+        stream: !done
+      });
+
+      const events = buffer.split(/\r?\n\r?\n/);
+      buffer = events.pop() || '';
+
+      for (const eventText of events) {
+        processEvent(eventText);
+      }
+
+      if (done) break;
     }
 
-    if (typeof data.reply !== 'string' || !data.reply.trim()) {
-      throw new Error('La risposta AI è vuota.');
+    if (buffer.trim()) {
+      processEvent(buffer);
     }
 
-    await streamAssistantMessage(data.reply, chat);
+    if (!fullText.trim()) {
+      throw new Error('NEXORA non ha ricevuto una risposta dal modello.');
+    }
+
+    message.content = fullText;
+    chat.updatedAt = Date.now();
+    bubble.classList.remove('is-streaming');
+
+    saveConversations();
+    renderHistory();
+  } catch (error) {
+    if (fullText.trim()) {
+      message.content = fullText;
+      saveConversations();
+    } else {
+      chat.messages = chat.messages.filter(item => item.id !== message.id);
+      bubble.remove();
+    }
+
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 
   } catch (error) {
     console.error('NEXORA API:', error);
