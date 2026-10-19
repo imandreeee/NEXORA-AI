@@ -27,16 +27,12 @@ let activeId = conversations[0]?.id || null;
 let isSending = false;
 
 function createId() {
-  return Date.now().toString(36) +
-    Math.random().toString(36).slice(2, 8);
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
 function loadConversations() {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem(STORAGE_KEY) || '[]'
-    );
-
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     if (!Array.isArray(saved)) return [];
 
     return saved.filter(chat =>
@@ -44,20 +40,16 @@ function loadConversations() {
       typeof chat.id === 'string' &&
       Array.isArray(chat.messages)
     );
-  } catch (error) {
-    console.warn('Cronologia non disponibile:', error);
+  } catch {
     return [];
   }
 }
 
 function saveConversations() {
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(conversations)
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
   } catch (error) {
-    console.error('Errore salvataggio:', error);
+    console.error('Errore salvataggio cronologia:', error);
   }
 }
 
@@ -85,27 +77,24 @@ function createConversation() {
   elements.prompt.focus();
 }
 
-function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, char => ({
+function renderMarkdown(text) {
+  const content = String(text);
+
+  if (window.marked && window.DOMPurify) {
+    return window.DOMPurify.sanitize(
+      window.marked.parse(content, { gfm: true, breaks: true })
+    );
+  }
+
+  const escaped = content.replace(/[&<>"']/g, char => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#39;'
   })[char]);
-}
 
-function renderMarkdown(text) {
-  if (window.marked && window.DOMPurify) {
-    const html = window.marked.parse(String(text), {
-      gfm: true,
-      breaks: true
-    });
-
-    return window.DOMPurify.sanitize(html);
-  }
-
-  return escapeHtml(text).replace(/\n/g, '<br>');
+  return escaped.replace(/\n/g, '<br>');
 }
 
 function renderMessages() {
@@ -113,11 +102,7 @@ function renderMessages() {
   elements.messages.replaceChildren();
 
   const messages = chat ? chat.messages : [];
-
-  elements.welcome.classList.toggle(
-    'hidden',
-    messages.length > 0
-  );
+  elements.welcome.classList.toggle('hidden', messages.length > 0);
 
   for (const message of messages) {
     const bubble = document.createElement('div');
@@ -132,8 +117,7 @@ function renderMessages() {
     elements.messages.appendChild(bubble);
   }
 
-  elements.messages.scrollTop =
-    elements.messages.scrollHeight;
+  elements.messages.scrollTop = elements.messages.scrollHeight;
 }
 
 function renderHistory() {
@@ -143,22 +127,25 @@ function renderHistory() {
     .filter(chat => chat.messages.length > 0)
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
+  if (!ordered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'history-item';
+    empty.textContent = '◇ Le tue chat appariranno qui';
+    elements.history.appendChild(empty);
+    return;
+  }
+
   for (const chat of ordered) {
     const button = document.createElement('button');
-
     button.type = 'button';
     button.className = 'history-item';
     button.textContent = '◇ ' + chat.title;
     button.title = chat.title;
 
-    if (chat.id === activeId) {
-      button.classList.add('active');
-      button.setAttribute('aria-current', 'true');
-    }
+    if (chat.id === activeId) button.classList.add('active');
 
     button.addEventListener('click', () => {
       if (isSending) return;
-
       activeId = chat.id;
       renderHistory();
       renderMessages();
@@ -167,48 +154,27 @@ function renderHistory() {
 
     elements.history.appendChild(button);
   }
-
-  if (ordered.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'history-item';
-    empty.textContent = '◇ Le tue chat appariranno qui';
-    elements.history.appendChild(empty);
-  }
 }
 
 function showView(view) {
-  elements.chatView.classList.toggle(
-    'hidden',
-    view !== 'chat'
-  );
-
-  elements.exploreView.classList.toggle(
-    'hidden',
-    view !== 'explore'
-  );
-
+  elements.chatView.classList.toggle('hidden', view !== 'chat');
+  elements.exploreView.classList.toggle('hidden', view !== 'explore');
   elements.pageName.textContent =
     view === 'chat' ? 'AI Assistant' : 'Esplora Nexora';
 
   $$('.nav-item').forEach(button => {
     const active = button.dataset.view === view;
-
     button.classList.toggle('active', active);
 
-    if (active) {
-      button.setAttribute('aria-current', 'page');
-    } else {
-      button.removeAttribute('aria-current');
-    }
+    if (active) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
   });
 
-  document.querySelector('.sidebar')
-    ?.classList.remove('is-open');
+  document.querySelector('.sidebar')?.classList.remove('is-open');
 }
 
 function autoResize() {
   elements.prompt.style.height = 'auto';
-
   elements.prompt.style.height =
     Math.min(elements.prompt.scrollHeight, 180) + 'px';
 }
@@ -217,31 +183,23 @@ function setBusy(busy) {
   isSending = busy;
   elements.send.disabled = busy;
   elements.prompt.disabled = busy;
-
   elements.send.classList.toggle('is-loading', busy);
-}
-
-function showLoading() {
-  const bubble = document.createElement('div');
-
-  bubble.className = 'message assistant';
-  bubble.textContent = 'NEXORA sta pensando...';
-  bubble.setAttribute('aria-label', 'Risposta in preparazione');
-
-  elements.messages.appendChild(bubble);
-  elements.messages.scrollTop =
-    elements.messages.scrollHeight;
-
-  return bubble;
 }
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function streamAssistantMessage(content, chat, loading) {
-  loading.remove();
+function showLoading() {
+  const bubble = document.createElement('div');
+  bubble.className = 'message assistant';
+  bubble.textContent = 'NEXORA sta pensando...';
+  elements.messages.appendChild(bubble);
+  elements.messages.scrollTop = elements.messages.scrollHeight;
+  return bubble;
+}
 
+async function streamAssistantMessage(content, chat, bubble) {
   const message = {
     id: createId(),
     role: 'assistant',
@@ -249,12 +207,8 @@ async function streamAssistantMessage(content, chat, loading) {
   };
 
   chat.messages.push(message);
-
-  const bubble = document.createElement('div');
-  bubble.className = 'message assistant is-streaming';
+  bubble.classList.add('is-streaming');
   bubble.setAttribute('aria-label', 'Risposta di NEXORA AI');
-
-  elements.messages.appendChild(bubble);
 
   let i = 0;
 
@@ -262,43 +216,38 @@ async function streamAssistantMessage(content, chat, loading) {
     const remaining = content.length - i;
     const current = content[i];
 
-    let chunkSize = remaining > 500 ? 5 : remaining > 180 ? 3 : 2;
-    let delay = remaining > 500 ? 5 : remaining > 180 ? 12 : 18;
+    let chunkSize = remaining > 500 ? 6 : remaining > 180 ? 4 : 2;
+    let delay = remaining > 500 ? 8 : remaining > 180 ? 14 : 20;
 
     if (/[.!?…]/.test(current)) {
       chunkSize = 1;
       delay = 100;
     } else if (/[,;:]/.test(current)) {
       chunkSize = 1;
-      delay = 50;
+      delay = 55;
     } else if (current === '\n') {
       chunkSize = 1;
-      delay = 65;
+      delay = 70;
     }
 
     i = Math.min(i + chunkSize, content.length);
     message.content = content.slice(0, i);
-
     bubble.innerHTML = renderMarkdown(message.content);
 
-    elements.messages.scrollTop =
-      elements.messages.scrollHeight;
+    elements.messages.scrollTop = elements.messages.scrollHeight;
 
-    if (i < content.length) {
-      await sleep(delay);
-    }
+    if (i < content.length) await sleep(delay);
   }
 
   bubble.classList.remove('is-streaming');
-
   chat.updatedAt = Date.now();
+
   saveConversations();
   renderHistory();
 }
 
 async function sendMessage(text) {
   const content = text.trim();
-
   if (!content || isSending) return;
 
   if (!getActiveConversation()) {
@@ -314,15 +263,11 @@ async function sendMessage(text) {
   }
 
   const chat = getActiveConversation();
-
   showView('chat');
 
-  if (chat.messages.length === 0) {
+  if (!chat.messages.length) {
     chat.title = content.replace(/\s+/g, ' ').slice(0, 38);
-
-    if (content.length > 38) {
-      chat.title += '…';
-    }
+    if (content.length > 38) chat.title += '…';
   }
 
   chat.messages.push({
@@ -346,44 +291,114 @@ async function sendMessage(text) {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        messages: chat.messages.slice(-16).map(
-          ({ role, content }) => ({ role, content })
-        )
+        messages: chat.messages.slice(-16).map(({ role, content }) => ({
+          role,
+          content
+        }))
       })
     });
 
-    let data;
-
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error('Risposta del server non valida.');
-    }
+    // Il Worker attuale restituisce uno stream SSE, non JSON.
+    const contentType = response.headers.get('content-type') || '';
 
     if (!response.ok) {
-      throw new Error(
-        data.error || `Errore del server (${response.status}).`
-      );
+      let details = '';
+
+      try {
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+          details = data.error || '';
+        } else {
+          details = (await response.text()).slice(0, 200);
+        }
+      } catch {}
+
+      throw new Error(details || `Errore server ${response.status}`);
     }
 
-    if (typeof data.reply !== 'string' || !data.reply.trim()) {
-      throw new Error('La risposta AI è vuota.');
+    let reply = '';
+
+    if (contentType.includes('text/event-stream')) {
+      if (!response.body) throw new Error('Stream della risposta vuoto.');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          buffer += decoder.decode(value || new Uint8Array(), {
+            stream: !done
+          });
+
+          const events = buffer.split(/\r?\n\r?\n/);
+          buffer = events.pop() || '';
+
+          for (const event of events) {
+            for (const line of event.split(/\r?\n/)) {
+              if (!line.startsWith('data:')) continue;
+
+              const raw = line.slice(5).trim();
+              if (!raw || raw === '[DONE]') continue;
+
+              let packet;
+
+              try {
+                packet = JSON.parse(raw);
+              } catch {
+                continue;
+              }
+
+              const delta = packet.choices?.[0]?.delta?.content;
+              if (typeof delta === 'string') reply += delta;
+            }
+          }
+
+          if (done) break;
+        }
+
+        if (buffer.trim()) {
+          for (const line of buffer.split(/\r?\n/)) {
+            if (!line.startsWith('data:')) continue;
+
+            const raw = line.slice(5).trim();
+            if (!raw || raw === '[DONE]') continue;
+
+            try {
+              const packet = JSON.parse(raw);
+              const delta = packet.choices?.[0]?.delta?.content;
+              if (typeof delta === 'string') reply += delta;
+            } catch {}
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } else if (contentType.includes('application/json')) {
+      const data = await response.json();
+      reply = typeof data.reply === 'string' ? data.reply : '';
+    } else {
+      throw new Error('Formato di risposta del Worker non riconosciuto.');
     }
 
-    await streamAssistantMessage(data.reply.trim(), chat, loading);
+    if (!reply.trim()) {
+      throw new Error('NEXORA non ha ricevuto una risposta dal modello.');
+    }
+
+    loading.textContent = '';
+    await streamAssistantMessage(reply.trim(), chat, loading);
 
   } catch (error) {
     console.error('NEXORA API:', error);
 
+    loading.classList.remove('is-streaming');
+    loading.classList.add('error');
     loading.textContent =
       'NEXORA ha riscontrato un problema: ' +
       (error.message || 'connessione non disponibile.');
-
-    loading.classList.add('error');
 
     saveConversations();
   } finally {
@@ -401,11 +416,7 @@ function bindEvents() {
   elements.prompt.addEventListener('input', autoResize);
 
   elements.prompt.addEventListener('keydown', event => {
-    if (
-      event.key === 'Enter' &&
-      !event.shiftKey &&
-      !event.isComposing
-    ) {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
       event.preventDefault();
       elements.form.requestSubmit();
     }
@@ -414,49 +425,34 @@ function bindEvents() {
   elements.newChat.addEventListener('click', createConversation);
 
   $$('.nav-item').forEach(button => {
-    button.addEventListener('click', () => {
-      showView(button.dataset.view);
-    });
+    button.addEventListener('click', () => showView(button.dataset.view));
   });
 
   $$('[data-prompt]').forEach(button => {
     button.addEventListener('click', () => {
-      const prompt = button.dataset.prompt;
-      if (prompt) sendMessage(prompt);
+      if (button.dataset.prompt) sendMessage(button.dataset.prompt);
     });
   });
 
   elements.themeToggle.addEventListener('click', () => {
-    const enabled = document.body.classList.toggle(
-      'light-atmosphere'
-    );
+    const enabled = document.body.classList.toggle('light-atmosphere');
 
-    elements.themeToggle.setAttribute(
-      'aria-pressed',
-      String(enabled)
-    );
+    elements.themeToggle.setAttribute('aria-pressed', String(enabled));
 
     try {
-      localStorage.setItem(
-        'nexora-theme',
-        enabled ? 'light' : 'dark'
-      );
+      localStorage.setItem('nexora-theme', enabled ? 'light' : 'dark');
     } catch (error) {
       console.warn('Tema non salvato:', error);
     }
   });
 
-  if (elements.mobileMenu) {
-    elements.mobileMenu.addEventListener('click', () => {
-      document.querySelector('.sidebar')
-        ?.classList.toggle('is-open');
-    });
-  }
+  elements.mobileMenu?.addEventListener('click', () => {
+    document.querySelector('.sidebar')?.classList.toggle('is-open');
+  });
 
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
-      document.querySelector('.sidebar')
-        ?.classList.remove('is-open');
+      document.querySelector('.sidebar')?.classList.remove('is-open');
     }
   });
 
@@ -467,12 +463,10 @@ function bindEvents() {
 }
 
 function init() {
-  if (!elements.form || !elements.prompt ||
-      !elements.send || !elements.messages ||
-      !elements.welcome || !elements.newChat ||
-      !elements.history || !elements.chatView ||
-      !elements.exploreView || !elements.pageName ||
-      !elements.themeToggle) {
+  if (!elements.form || !elements.prompt || !elements.send ||
+      !elements.messages || !elements.welcome || !elements.newChat ||
+      !elements.history || !elements.chatView || !elements.exploreView ||
+      !elements.pageName || !elements.themeToggle) {
     console.error('NEXORA: mancano elementi HTML richiesti.');
     return;
   }
