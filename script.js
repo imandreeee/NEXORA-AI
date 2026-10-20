@@ -936,20 +936,11 @@ async function sendMessage(text) {
 }
 
 function bindEvents() {
-
-elements.send.addEventListener('click', () => {
-  alert('NEXORA TEST: CLICK RICEVUTO');
-});
-  
-elements.form.addEventListener('submit', async function (event) {
-  event.preventDefault();
-
-  const message = elements.prompt.value.trim();
-
-  if (!message || isSending) return;
-
-  await sendMessage(message);
-});
+  elements.form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    alert('SUBMIT INTERCETTATO');
+  });
+}
 
   elements.prompt.addEventListener('input', autoResize);
 
