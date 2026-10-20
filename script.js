@@ -279,7 +279,7 @@ function autoResize() {
 
 function setBusy(busy) {
   isSending = busy;
-  .disabled = busy;
+  elements.send.disabled = busy;
   elements.prompt.disabled = busy;
   elements.send.classList.toggle('is-loading', busy);
 }
@@ -936,10 +936,15 @@ async function sendMessage(text) {
 }
 
 function bindEvents() {
-  elements.form.addEventListener('submit', function (event) {
-    event.preventDefault();
-    alert('SUBMIT INTERCETTATO');
-  });
+ elements.form.addEventListener('submit', function (event) {
+  event.preventDefault();
+
+  const message = elements.prompt.value.trim();
+
+  if (!message || isSending) return;
+
+  sendMessage(message);
+});
 
   elements.prompt.addEventListener('input', autoResize);
 
