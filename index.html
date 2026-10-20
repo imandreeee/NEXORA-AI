@@ -10,11 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  
-<script defer src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
-<script src="script.js" defer></script>
-
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+  <script src="script.js" defer></script>
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -26,25 +25,19 @@
       <span class="brand-mark">N</span>
       <span>NEXORA<span class="brand-ai">.AI</span></span>
     </a>
-
-    <button class="new-chat" id="newChat">
-      <span>＋</span> Nuova conversazione
-    </button>
-
+    <button class="new-chat" id="newChat"><span>＋</span> Nuova conversazione</button>
     <div class="side-label">WORKSPACE</div>
     <button class="nav-item active" data-view="chat"><span>◈</span> AI Assistant</button>
     <button class="nav-item" data-view="explore"><span>⌘</span> Esplora Nexora</button>
-
     <div class="side-label history-label">RECENTI</div>
     <div id="history" class="history">
-      <button class="history-item">◇ La tua prima chat</button>
+      <button class="history-item">◇ Le tue chat appariranno qui</button>
     </div>
-
     <div class="sidebar-bottom">
       <div class="status-line"><span class="status-dot"></span> SYSTEM OPERATIONAL</div>
       <div class="profile">
         <div class="avatar">N</div>
-        <div><strong>Nexora User</strong><small>Free workspace</small></div>
+        <div><strong>NEXORA USER</strong><small>Personal workspace</small></div>
         <span class="profile-more">•••</span>
       </div>
     </div>
@@ -69,11 +62,9 @@
           <span class="orb-spark spark-one"></span>
           <span class="orb-spark spark-two"></span>
         </div>
-
         <div class="eyebrow"><span class="status-dot"></span> YOUR INTELLIGENCE INTERFACE</div>
         <h1>Ideas become<br><span>something more.</span></h1>
         <p class="welcome-copy">Sono Nexora. Il tuo spazio per esplorare idee,<br class="desktop-break"> risolvere problemi e spingere oltre i limiti.</p>
-
         <div class="suggestions">
           <button class="suggestion" data-prompt="Dammi un'idea rivoluzionaria per un progetto digitale."><span>✳</span><strong>Think bigger</strong><small>Genera un'idea fuori dagli schemi</small><b>↗</b></button>
           <button class="suggestion" data-prompt="Spiegami come funziona l'intelligenza artificiale in modo semplice ma interessante."><span>⌘</span><strong>Decode the future</strong><small>Esplora la tecnologia</small><b>↗</b></button>
@@ -83,7 +74,6 @@
       </div>
 
       <div class="messages" id="messages" aria-live="polite"></div>
-
       <div class="composer-area">
         <form class="composer" id="chatForm">
           <textarea id="prompt" rows="1" maxlength="2000" placeholder="Chiedi qualcosa a Nexora..." aria-label="Scrivi il tuo messaggio"></textarea>
@@ -92,7 +82,7 @@
             <button class="send-button" id="sendButton" type="submit" aria-label="Invia messaggio"><span>Invia</span> <b>↗</b></button>
           </div>
         </form>
-        <p class="disclaimer">NEXORA CORE · Risposte generate localmente · Nessun account richiesto</p>
+        <p class="disclaimer">NEXORA CORE · Risposte generate da IA · Account facoltativo</p>
       </div>
     </section>
 
@@ -112,4 +102,3 @@
   </main>
 </body>
 </html>
-
