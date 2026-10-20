@@ -941,19 +941,14 @@ elements.send.addEventListener('click', () => {
   alert('NEXORA TEST: CLICK RICEVUTO');
 });
   
- elements.form.addEventListener('submit', function (event) {
+elements.form.addEventListener('submit', async function (event) {
   event.preventDefault();
 
-  console.log('NEXORA: pulsante Invia attivato');
-
-  if (isSending) return;
-
   const message = elements.prompt.value.trim();
-  if (!message) return;
 
-  sendMessage(message).catch(error => {
-    console.error('Errore invio:', error);
-  });
+  if (!message || isSending) return;
+
+  await sendMessage(message);
 });
 
   elements.prompt.addEventListener('input', autoResize);
