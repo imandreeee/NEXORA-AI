@@ -940,7 +940,6 @@ function bindEvents() {
     event.preventDefault();
     alert('SUBMIT INTERCETTATO');
   });
-}
 
   elements.prompt.addEventListener('input', autoResize);
 
