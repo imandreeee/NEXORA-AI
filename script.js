@@ -928,15 +928,19 @@ async function sendMessage(text) {
 }
 
 function bindEvents() {
-  elements.form.addEventListener('submit', function (event) {
+ elements.form.addEventListener('submit', function (event) {
   event.preventDefault();
-  event.stopPropagation();
+
+  console.log('NEXORA: pulsante Invia attivato');
+
+  if (isSending) return;
 
   const message = elements.prompt.value.trim();
+  if (!message) return;
 
-  if (!message || isSending) return;
-
-  sendMessage(message);
+  sendMessage(message).catch(error => {
+    console.error('Errore invio:', error);
+  });
 });
 
   elements.prompt.addEventListener('input', autoResize);
