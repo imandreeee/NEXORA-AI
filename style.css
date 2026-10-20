@@ -1314,7 +1314,7 @@ body.light-atmosphere .grid-bg {
 
 
 /* NEXORA AI — testo più leggibile */
-. {
+.message {
   line-height: 1.75;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1325,7 +1325,6 @@ body.light-atmosphere .grid-bg {
   letter-spacing: 0.01em;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
 }
 
 .assistant strong {
@@ -1528,4 +1527,22 @@ body.light-atmosphere .grid-bg {
   .message.assistant.is-streaming::after {
     animation: none;
   }
+}
+
+#chatForm,
+#chatForm .composer-footer,
+#sendButton {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+#sendButton {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#sendButton:disabled {
+  cursor: wait;
 }
