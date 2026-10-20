@@ -27,6 +27,14 @@ const elements = {
   mobileMenu: $('#mobileMenu')
 };
 
+console.log('NEXORA BUTTON CHECK', {
+  buttonFound: !!elements.send,
+  disabled: elements.send?.disabled,
+  pointerEvents: elements.send
+    ? getComputedStyle(elements.send).pointerEvents
+    : 'pulsante non trovato'
+});
+
 let supabase = null;
 let currentUser = null;
 let conversations = loadConversations();
