@@ -271,7 +271,7 @@ function autoResize() {
 
 function setBusy(busy) {
   isSending = busy;
-  elements.send.disabled = busy;
+  .disabled = busy;
   elements.prompt.disabled = busy;
   elements.send.classList.toggle('is-loading', busy);
 }
@@ -928,6 +928,11 @@ async function sendMessage(text) {
 }
 
 function bindEvents() {
+
+elements.send.addEventListener('click', () => {
+  alert('NEXORA TEST: CLICK RICEVUTO');
+});
+  
  elements.form.addEventListener('submit', function (event) {
   event.preventDefault();
 
