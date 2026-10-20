@@ -16,7 +16,14 @@
   <script>
   alert('NEXORA: HTML CARICATO');
 </script>
-<script src="script.js?test=127" defer></script>
+
+  <script>
+  window.addEventListener('error', function (event) {
+    alert('ERRORE JS: ' + event.message);
+  });
+</script>
+  
+  <script src="script.js?test=127" defer></script>
 </head>
 <body>
   <div class="ambient ambient-one"></div>
