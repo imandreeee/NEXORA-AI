@@ -928,10 +928,16 @@ async function sendMessage(text) {
 }
 
 function bindEvents() {
-  elements.form.addEventListener('submit', event => {
-    event.preventDefault();
-    sendMessage(elements.prompt.value);
-  });
+  elements.form.addEventListener('submit', function (event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const message = elements.prompt.value.trim();
+
+  if (!message || isSending) return;
+
+  sendMessage(message);
+});
 
   elements.prompt.addEventListener('input', autoResize);
 
