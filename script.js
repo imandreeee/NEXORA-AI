@@ -1056,6 +1056,8 @@ async function init() {
 
   await initSupabase();
 
+  alert('NEXORA AI inizializzata');
+
   console.info('NEXORA AI inizializzata.');
 }
 
