@@ -7,6 +7,7 @@
  */
 const API_URL = 'https://nexora-ai-api.nexoraaaaiii-f43.workers.dev/';
 const SUPABASE_URL = 'https://ciuyzwuarbdsopncfpkd.supabase.co';
+const SITE_URL = 'https://imandreeee.github.io/NEXORA-AI/';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_1RTZH3BXnQClCbE_1Vqaqw_Jl16ISRA';
 const STORAGE_KEY = 'nexora-conversations-v1';
 
@@ -130,7 +131,7 @@ async function deleteConversation(id) {
   if (!chat) return;
   if (!window.confirm(`Eliminare la conversazione "${chat.title}"?`)) return;
 
-  if (currentUser && supabase) {
+  if (currentUser && supabaseClient) {
     const { error } = await supabaseClient.from('conversations')
       .delete().eq('id', id).eq('user_id', currentUser.id);
     if (error) {
@@ -243,7 +244,7 @@ function toDbRow(chat) {
 }
 
 async function syncConversation(chat) {
-  if (!currentUser || !supabase || !chat || syncing) return;
+  if (!currentUser || !supabaseClient || !chat || syncing) return;
   syncing = true;
   try {
     const { error } = await supabaseClient.from('conversations').upsert(
@@ -259,7 +260,7 @@ async function syncConversation(chat) {
 }
 
 async function syncAllConversations() {
-  if (!currentUser || !supabase) return;
+  if (!currentUser || !supabaseClient) return;
   setAccountStatus('Sincronizzazione…');
   try {
     const { data, error } = await supabaseClient.from('conversations')
@@ -364,7 +365,7 @@ function buildAccountUI() {
 
   $('#nexoraAuthForm').addEventListener('submit', async event => {
     event.preventDefault();
-    if (!supabase) {
+    if (!supabaseClient) {
       setAccountStatus('Configura prima Project URL e Publishable Key nel file script.js.');
       return;
     }
@@ -390,7 +391,7 @@ function buildAccountUI() {
   });
 
   $('#nexoraSignup').addEventListener('click', async () => {
-    if (!supabase) {
+    if (!supabaseClient) {
       setAccountStatus('Configura prima Project URL e Publishable Key nel file script.js.');
       return;
     }
@@ -418,7 +419,7 @@ function buildAccountUI() {
   });
 
   $('#nexoraLogout').addEventListener('click', async () => {
-    if (!supabase) return;
+    if (!supabaseClient) return;
     const { error } = await supabaseClient.auth.signOut();
     if (error) {
       setAccountStatus(error.message);
