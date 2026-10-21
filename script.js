@@ -307,6 +307,7 @@ function setAccountStatus(text) {
   if (status) status.textContent = text;
 }
 
+
 function buildAccountUI() {
   const topActions = $('.top-actions');
   if (!topActions || $('#nexoraAccountButton')) return;
@@ -321,7 +322,8 @@ function buildAccountUI() {
   const overlay = document.createElement('div');
   overlay.id = 'nexoraAuthOverlay';
   overlay.hidden = true;
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(4,4,15,.78);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:20px;';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(4,4,15,.78);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;';
+
   overlay.innerHTML = `
     <section role="dialog" aria-modal="true" aria-labelledby="nexoraAuthTitle"
       style="width:min(100%,420px);background:#11111f;color:#f5f5ff;border:1px solid #35354d;border-radius:20px;padding:24px;box-shadow:0 25px 80px #0008;font-family:inherit;">
@@ -329,108 +331,321 @@ function buildAccountUI() {
         <h2 id="nexoraAuthTitle" style="margin:0;font-size:22px;">Il tuo account NEXORA</h2>
         <button id="nexoraAuthClose" type="button" aria-label="Chiudi" style="background:transparent;color:inherit;border:0;font-size:25px;cursor:pointer;">×</button>
       </div>
-      <p style="color:#b9b9d0;font-size:13px;line-height:1.5;">Accedi per sincronizzare le tue conversazioni su più dispositivi.</p>
+
+      <p style="color:#b9b9d0;font-size:13px;line-height:1.5;">
+        Accedi per sincronizzare le tue conversazioni su più dispositivi.
+      </p>
+
       <form id="nexoraAuthForm" style="display:grid;gap:12px;">
         <label style="display:grid;gap:6px;font-size:13px;">Email
           <input id="nexoraEmail" type="email" autocomplete="email" required placeholder="nome@email.com"
             style="box-sizing:border-box;width:100%;padding:12px;border-radius:10px;border:1px solid #41415b;background:#080812;color:white;">
         </label>
+
         <label style="display:grid;gap:6px;font-size:13px;">Password
-          <input id="nexoraPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="Almeno 6 caratteri"
+          <input id="nexoraPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="La tua password"
             style="box-sizing:border-box;width:100%;padding:12px;border-radius:10px;border:1px solid #41415b;background:#080812;color:white;">
         </label>
+
         <button id="nexoraLogin" type="submit" style="padding:12px;border:0;border-radius:10px;background:#8a75ff;color:white;font-weight:700;cursor:pointer;">Accedi</button>
+
+        <button id="nexoraForgotPassword" type="button" style="border:0;background:transparent;color:#b9aaff;cursor:pointer;padding:7px;">Password dimenticata?</button>
+
         <button id="nexoraSignup" type="button" style="padding:11px;border:1px solid #45455e;border-radius:10px;background:transparent;color:inherit;cursor:pointer;">Crea un account</button>
+
         <button id="nexoraLogout" type="button" hidden style="padding:11px;border:1px solid #45455e;border-radius:10px;background:transparent;color:inherit;cursor:pointer;">Esci dall'account</button>
-        <p id="nexoraAccountStatus" role="status" style="margin:0;color:#c8c8e0;font-size:13px;line-height:1.5;"></p>
       </form>
-      <p style="color:#9292ac;font-size:11px;line-height:1.5;margin-bottom:0;">Le chat sono associate all'account con cui accedi. Non condividere la password.</p>
+
+      <form id="nexoraRecoveryForm" hidden style="display:none;gap:12px;margin-top:16px;">
+        <p style="color:#b9b9d0;font-size:13px;line-height:1.5;margin:0;">
+          Scegli una nuova password per il tuo account NEXORA.
+        </p>
+
+        <label style="display:grid;gap:6px;font-size:13px;">Nuova password
+          <input id="nexoraNewPassword" type="password" autocomplete="new-password" minlength="6" required placeholder="Almeno 6 caratteri"
+            style="box-sizing:border-box;width:100%;padding:12px;border-radius:10px;border:1px solid #41415b;background:#080812;color:white;">
+        </label>
+
+        <label style="display:grid;gap:6px;font-size:13px;">Conferma password
+          <input id="nexoraConfirmPassword" type="password" autocomplete="new-password" minlength="6" required placeholder="Ripeti la password"
+            style="box-sizing:border-box;width:100%;padding:12px;border-radius:10px;border:1px solid #41415b;background:#080812;color:white;">
+        </label>
+
+        <button id="nexoraSavePassword" type="submit" style="padding:12px;border:0;border-radius:10px;background:#8a75ff;color:white;font-weight:700;cursor:pointer;">Salva nuova password</button>
+
+        <button id="nexoraCancelRecovery" type="button" style="padding:10px;border:1px solid #45455e;border-radius:10px;background:transparent;color:inherit;cursor:pointer;">Torna all'accesso</button>
+      </form>
+
+      <p id="nexoraAccountStatus" role="status" aria-live="polite" style="margin:12px 0 0;color:#c8c8e0;font-size:13px;line-height:1.5;"></p>
+
+      <p style="color:#9292ac;font-size:11px;line-height:1.5;margin-bottom:0;">
+        Non condividere la tua password con nessuno.
+      </p>
     </section>`;
+
   document.body.appendChild(overlay);
 
-  button.addEventListener('click', () => {
+  const authForm = $('#nexoraAuthForm');
+  const recoveryForm = $('#nexoraRecoveryForm');
+  const emailInput = $('#nexoraEmail');
+  const passwordInput = $('#nexoraPassword');
+  const loginButton = $('#nexoraLogin');
+  const signupButton = $('#nexoraSignup');
+  const logoutButton = $('#nexoraLogout');
+  const forgotButton = $('#nexoraForgotPassword');
+  const savePasswordButton = $('#nexoraSavePassword');
+
+  function openOverlay() {
     overlay.hidden = false;
     overlay.style.display = 'flex';
-    setAccountStatus(currentUser ? `Connesso come ${currentUser.email}` : 'Accedi o crea un account.');
-    $('#nexoraLogout').hidden = !currentUser;
-    $('#nexoraLogin').hidden = !!currentUser;
-    $('#nexoraSignup').hidden = !!currentUser;
-    $('#nexoraEmail').value = currentUser?.email || '';
-    $('#nexoraPassword').value = '';
+  }
+
+  function showLoginForm() {
+    authForm.hidden = false;
+    authForm.style.display = 'grid';
+    recoveryForm.hidden = true;
+    recoveryForm.style.display = 'none';
+    $('#nexoraAuthTitle').textContent = 'Il tuo account NEXORA';
+    $('#nexoraNewPassword').value = '';
+    $('#nexoraConfirmPassword').value = '';
+  }
+
+  function showRecoveryForm() {
+    openOverlay();
+    authForm.hidden = true;
+    authForm.style.display = 'none';
+    recoveryForm.hidden = false;
+    recoveryForm.style.display = 'grid';
+    $('#nexoraAuthTitle').textContent = 'Reimposta password';
+    setAccountStatus('Inserisci e conferma la tua nuova password.');
+    $('#nexoraNewPassword').focus();
+  }
+
+  button.addEventListener('click', () => {
+    showLoginForm();
+    openOverlay();
+
+    setAccountStatus(
+      currentUser ? `Connesso come ${currentUser.email}` : 'Accedi o crea un account.'
+    );
+
+    logoutButton.hidden = !currentUser;
+    loginButton.hidden = !!currentUser;
+    signupButton.hidden = !!currentUser;
+    forgotButton.hidden = !!currentUser;
+    emailInput.value = currentUser?.email || '';
+    passwordInput.value = '';
   });
+
   $('#nexoraAuthClose').addEventListener('click', closeAuth);
+
   overlay.addEventListener('click', event => {
     if (event.target === overlay) closeAuth();
   });
 
-  $('#nexoraAuthForm').addEventListener('submit', async event => {
+  $('#nexoraCancelRecovery').addEventListener('click', () => {
+    showLoginForm();
+    setAccountStatus('Inserisci email e password per accedere.');
+  });
+
+  authForm.addEventListener('submit', async event => {
     event.preventDefault();
+
     if (!supabaseClient) {
-      setAccountStatus('Configura prima Project URL e Publishable Key nel file script.js.');
+      setAccountStatus('Supabase non è inizializzato. Ricarica la pagina.');
       return;
     }
-    const email = $('#nexoraEmail').value.trim();
-    const password = $('#nexoraPassword').value;
+
+    loginButton.disabled = true;
     setAccountStatus('Accesso in corso…');
-    $('#nexoraLogin').disabled = true;
+
     try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: emailInput.value.trim(),
+        password: passwordInput.value
+      });
+
       if (error) throw error;
+
       currentUser = data.user;
       updateAccountButton();
       await syncAllConversations();
-      $('#nexoraLogout').hidden = false;
-      $('#nexoraLogin').hidden = true;
-      $('#nexoraSignup').hidden = true;
+
+      logoutButton.hidden = false;
+      loginButton.hidden = true;
+      signupButton.hidden = true;
+      forgotButton.hidden = true;
+
       setAccountStatus(`Connesso come ${currentUser.email}`);
     } catch (error) {
       setAccountStatus(error.message || 'Accesso non riuscito.');
     } finally {
-      $('#nexoraLogin').disabled = false;
+      loginButton.disabled = false;
     }
   });
 
-  $('#nexoraSignup').addEventListener('click', async () => {
+  forgotButton.addEventListener('click', async () => {
     if (!supabaseClient) {
-      setAccountStatus('Configura prima Project URL e Publishable Key nel file script.js.');
+      setAccountStatus('Supabase non è inizializzato.');
       return;
     }
-    const email = $('#nexoraEmail').value.trim();
-    const password = $('#nexoraPassword').value;
+
+    const email = emailInput.value.trim();
+
+    if (!email) {
+      setAccountStatus('Inserisci prima la tua email nel campo Email.');
+      emailInput.focus();
+      return;
+    }
+
+    forgotButton.disabled = true;
+    setAccountStatus('Invio della richiesta in corso…');
+
+    try {
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: SITE_URL
+      });
+
+      if (error) throw error;
+
+      setAccountStatus(
+        'Se l’indirizzo è associato a un account, riceverai un’email per reimpostare la password. Controlla anche Spam.'
+      );
+    } catch (error) {
+      console.error('Recupero password:', error);
+      setAccountStatus(
+        error.message || 'Impossibile inviare la richiesta. Riprova più tardi.'
+      );
+    } finally {
+      forgotButton.disabled = false;
+    }
+  });
+
+  recoveryForm.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    if (!supabaseClient) {
+      setAccountStatus('Supabase non è inizializzato.');
+      return;
+    }
+
+    const newPassword = $('#nexoraNewPassword').value;
+    const confirmPassword = $('#nexoraConfirmPassword').value;
+
+    if (newPassword.length < 6) {
+      setAccountStatus('La password deve contenere almeno 6 caratteri.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setAccountStatus('Le due password non coincidono.');
+      return;
+    }
+
+    savePasswordButton.disabled = true;
+    setAccountStatus('Salvataggio della nuova password…');
+
+    try {
+      const { data, error } = await supabaseClient.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      currentUser = data.user || currentUser;
+      updateAccountButton();
+
+      showLoginForm();
+      loginButton.hidden = true;
+      signupButton.hidden = true;
+      forgotButton.hidden = true;
+      logoutButton.hidden = false;
+
+      setAccountStatus('Password aggiornata correttamente. Puoi continuare a usare NEXORA AI.');
+      $('#nexoraNewPassword').value = '';
+      $('#nexoraConfirmPassword').value = '';
+    } catch (error) {
+      console.error('Aggiornamento password:', error);
+      setAccountStatus(
+        error.message || 'Non è stato possibile aggiornare la password. Il link potrebbe essere scaduto.'
+      );
+    } finally {
+      savePasswordButton.disabled = false;
+    }
+  });
+
+  signupButton.addEventListener('click', async () => {
+    if (!supabaseClient) {
+      setAccountStatus('Supabase non è inizializzato.');
+      return;
+    }
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
     if (!email || password.length < 6) {
       setAccountStatus('Inserisci un’email valida e una password di almeno 6 caratteri.');
       return;
     }
+
+    signupButton.disabled = true;
     setAccountStatus('Creazione account…');
+
     try {
-     const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: SITE_URL }
+      });
+
       if (error) throw error;
+
       if (data.session && data.user) {
         currentUser = data.user;
         updateAccountButton();
         await syncAllConversations();
+
+        loginButton.hidden = true;
+        signupButton.hidden = true;
+        forgotButton.hidden = true;
+        logoutButton.hidden = false;
+
         setAccountStatus('Account creato e accesso effettuato.');
       } else {
-        setAccountStatus('Account creato. Controlla la tua email per confermare la registrazione, poi accedi.');
+        setAccountStatus(
+          'Account creato. Controlla la tua email per confermare la registrazione, poi accedi.'
+        );
       }
     } catch (error) {
       setAccountStatus(error.message || 'Registrazione non riuscita.');
+    } finally {
+      signupButton.disabled = false;
     }
   });
 
-  $('#nexoraLogout').addEventListener('click', async () => {
+  logoutButton.addEventListener('click', async () => {
     if (!supabaseClient) return;
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) {
-      setAccountStatus(error.message);
-      return;
+
+    logoutButton.disabled = true;
+
+    try {
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) throw error;
+
+      currentUser = null;
+      updateAccountButton();
+
+      loginButton.hidden = false;
+      signupButton.hidden = false;
+      forgotButton.hidden = false;
+      logoutButton.hidden = true;
+
+      setAccountStatus('Sei uscito dall’account. Le chat locali restano su questo dispositivo.');
+    } catch (error) {
+      setAccountStatus(error.message || 'Impossibile uscire dall’account.');
+    } finally {
+      logoutButton.disabled = false;
     }
-    currentUser = null;
-    updateAccountButton();
-    setAccountStatus('Sei uscito dall’account. Le chat locali restano su questo dispositivo.');
-    $('#nexoraLogout').hidden = true;
-    $('#nexoraLogin').hidden = false;
-    $('#nexoraSignup').hidden = false;
   });
 }
 
@@ -463,14 +678,36 @@ const { data } = await supabaseClient.auth.getSession();
   currentUser = data.session?.user || null;
   updateAccountButton();
 
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    currentUser = session?.user || null;
-    updateAccountButton();
-    if (currentUser) {
-      // Evita di bloccare il callback di autenticazione con altre operazioni.
-      setTimeout(() => syncAllConversations(), 0);
+  
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  currentUser = session?.user || null;
+  updateAccountButton();
+
+  if (event === 'PASSWORD_RECOVERY') {
+    const overlay = $('#nexoraAuthOverlay');
+    const authForm = $('#nexoraAuthForm');
+    const recoveryForm = $('#nexoraRecoveryForm');
+
+    if (overlay && authForm && recoveryForm) {
+      overlay.hidden = false;
+      overlay.style.display = 'flex';
+
+      authForm.hidden = true;
+      authForm.style.display = 'none';
+
+      recoveryForm.hidden = false;
+      recoveryForm.style.display = 'grid';
+
+      $('#nexoraAuthTitle').textContent = 'Reimposta password';
+      setAccountStatus('Link verificato. Inserisci la tua nuova password.');
     }
-  });
+  }
+
+  if (currentUser) {
+    setTimeout(() => syncAllConversations(), 0);
+  }
+});
+
 
   if (currentUser) await syncAllConversations();
 }
