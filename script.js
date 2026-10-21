@@ -1,7 +1,5 @@
 'use strict';
 
-alert('JAVASCRIPT CARICATO');
-
 /*
  * NEXORA AI — frontend + Supabase Auth/cronologia
  * Inserisci i tuoi dati Supabase qui sotto.
