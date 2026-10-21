@@ -133,7 +133,7 @@ async function deleteConversation(id) {
   if (!window.confirm(`Eliminare la conversazione "${chat.title}"?`)) return;
 
   if (currentUser && supabase) {
-    const { error } = await supabase.from('conversations')
+    const { error } = await supabaseClient.from('conversations')
       .delete().eq('id', id).eq('user_id', currentUser.id);
     if (error) {
       console.error('Errore eliminazione Supabase:', error);
@@ -248,7 +248,7 @@ async function syncConversation(chat) {
   if (!currentUser || !supabase || !chat || syncing) return;
   syncing = true;
   try {
-    const { error } = await supabase.from('conversations').upsert(
+    const { error } = await supabaseClient.from('conversations').upsert(
       toDbRow(chat), { onConflict: 'id' }
     );
     if (error) throw error;
@@ -264,7 +264,7 @@ async function syncAllConversations() {
   if (!currentUser || !supabase) return;
   setAccountStatus('Sincronizzazione…');
   try {
-    const { data, error } = await supabase.from('conversations')
+    const { data, error } = await supabaseClient.from('conversations')
       .select('id,user_id,title,messages,created_at,updated_at')
       .eq('user_id', currentUser.id)
       .order('updated_at', { ascending: false });
@@ -291,7 +291,7 @@ async function syncAllConversations() {
 
     // Importa nel cloud le chat locali che non erano già presenti.
     for (const chat of localOnly) {
-      const { error: uploadError } = await supabase.from('conversations')
+     const { error: uploadError } = await supabaseClient.from('conversations')
         .upsert(toDbRow(chat), { onConflict: 'id' });
       if (uploadError) console.warn('Importazione chat locale non riuscita:', uploadError);
     }
@@ -375,7 +375,7 @@ function buildAccountUI() {
     setAccountStatus('Accesso in corso…');
     $('#nexoraLogin').disabled = true;
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) throw error;
       currentUser = data.user;
       updateAccountButton();
@@ -404,7 +404,7 @@ function buildAccountUI() {
     }
     setAccountStatus('Creazione account…');
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+     const { data, error } = await supabaseClient.auth.signUp({ email, password });
       if (error) throw error;
       if (data.session && data.user) {
         currentUser = data.user;
@@ -421,7 +421,7 @@ function buildAccountUI() {
 
   $('#nexoraLogout').addEventListener('click', async () => {
     if (!supabase) return;
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabaseClient.auth.signOut();
     if (error) {
       setAccountStatus(error.message);
       return;
@@ -459,12 +459,12 @@ async function initSupabase() {
     return;
   }
 
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-  const { data } = await supabase.auth.getSession();
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const { data } = await supabaseClient.auth.getSession();
   currentUser = data.session?.user || null;
   updateAccountButton();
 
-  supabase.auth.onAuthStateChange((_event, session) => {
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
     currentUser = session?.user || null;
     updateAccountButton();
     if (currentUser) {
