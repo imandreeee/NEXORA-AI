@@ -41,33 +41,56 @@ function createId() {
     Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
 }
 
+
+function getStorageKey() {
+  return currentUser?.id
+    ? `${STORAGE_KEY}:user:${currentUser.id}`
+    : `${STORAGE_KEY}:guest`;
+}
+
 function loadConversations() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const saved = JSON.parse(
+      localStorage.getItem(getStorageKey()) || '[]'
+    );
+
     if (!Array.isArray(saved)) return [];
+
     return saved.filter(chat =>
-      chat && typeof chat.id === 'string' && Array.isArray(chat.messages)
+      chat &&
+      typeof chat.id === 'string' &&
+      Array.isArray(chat.messages)
     ).map(chat => ({
       id: chat.id,
-      title: typeof chat.title === 'string' ? chat.title : 'Nuova conversazione',
+      title: typeof chat.title === 'string'
+        ? chat.title
+        : 'Nuova conversazione',
       messages: chat.messages.filter(m =>
-        m && ['user', 'assistant'].includes(m.role) && typeof m.content === 'string'
+        m &&
+        ['user', 'assistant'].includes(m.role) &&
+        typeof m.content === 'string'
       ),
       updatedAt: Number(chat.updatedAt) || Date.now(),
-      createdAt: Number(chat.createdAt) || Number(chat.updatedAt) || Date.now()
+      createdAt: Number(chat.createdAt) ||
+        Number(chat.updatedAt) || Date.now()
     }));
   } catch {
     return [];
   }
 }
 
+
 function saveConversations() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    localStorage.setItem(
+      getStorageKey(),
+      JSON.stringify(conversations)
+    );
   } catch (error) {
     console.error('Errore salvataggio cronologia locale:', error);
   }
 }
+
 
 function getActiveConversation() {
   return conversations.find(chat => chat.id === activeId);
@@ -259,15 +282,24 @@ async function syncConversation(chat) {
   }
 }
 
+
 async function syncAllConversations() {
   if (!currentUser || !supabaseClient) return;
+
+  const userId = currentUser.id;
   setAccountStatus('Sincronizzazione…');
+
   try {
-    const { data, error } = await supabaseClient.from('conversations')
+    const { data, error } = await supabaseClient
+      .from('conversations')
       .select('id,user_id,title,messages,created_at,updated_at')
-      .eq('user_id', currentUser.id)
+      .eq('user_id', userId)
       .order('updated_at', { ascending: false });
+
     if (error) throw error;
+
+    // Se nel frattempo è cambiato account, non applicare questi dati.
+    if (currentUser?.id !== userId) return;
 
     const remote = (data || []).map(row => ({
       id: row.id,
@@ -277,28 +309,24 @@ async function syncAllConversations() {
       updatedAt: Date.parse(row.updated_at) || Date.now()
     }));
 
-    const remoteIds = new Set(remote.map(chat => chat.id));
-    const localOnly = conversations.filter(chat => !remoteIds.has(chat.id));
-    conversations = [...remote, ...localOnly]
-      .filter((chat, index, all) => all.findIndex(other => other.id === chat.id) === index)
-      .sort((a, b) => b.updatedAt - a.updatedAt);
+    // Per gli account connessi, Supabase è la fonte della cronologia.
+    conversations = remote;
+
+    if (!getActiveConversation()) {
+      activeId = conversations[0]?.id || null;
+    }
 
     saveConversations();
     renderHistory();
-    if (!getActiveConversation()) activeId = conversations[0]?.id || null;
     renderMessages();
 
-    // Importa nel cloud le chat locali che non erano già presenti.
-    for (const chat of localOnly) {
-     const { error: uploadError } = await supabaseClient.from('conversations')
-        .upsert(toDbRow(chat), { onConflict: 'id' });
-      if (uploadError) console.warn('Importazione chat locale non riuscita:', uploadError);
-    }
     setAccountStatus('Account sincronizzato');
   } catch (error) {
     console.error('Errore caricamento cronologia:', error);
     setAccountStatus('Accesso attivo · errore sincronizzazione');
-    alert('Accesso effettuato, ma non riesco a caricare le chat da Supabase. Controlla URL, Publishable Key e policy RLS.');
+    alert(
+      'Accesso effettuato, ma non riesco a caricare le chat da Supabase. Controlla URL, Publishable Key e policy RLS.'
+    );
   }
 }
 
@@ -632,15 +660,23 @@ function buildAccountUI() {
       const { error } = await supabaseClient.auth.signOut();
       if (error) throw error;
 
-      currentUser = null;
-      updateAccountButton();
+     
+currentUser = null;
+conversations = loadConversations();
+activeId = conversations[0]?.id || null;
 
-      loginButton.hidden = false;
-      signupButton.hidden = false;
-      forgotButton.hidden = false;
-      logoutButton.hidden = true;
+updateAccountButton();
 
-      setAccountStatus('Sei uscito dall’account. Le chat locali restano su questo dispositivo.');
+loginButton.hidden = false;
+signupButton.hidden = false;
+forgotButton.hidden = false;
+logoutButton.hidden = true;
+
+renderHistory();
+renderMessages();
+
+setAccountStatus('Sei uscito dall’account.');
+
     } catch (error) {
       setAccountStatus(error.message || 'Impossibile uscire dall’account.');
     } finally {
@@ -674,14 +710,32 @@ async function initSupabase() {
   }
 
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
 const { data } = await supabaseClient.auth.getSession();
-  currentUser = data.session?.user || null;
-  updateAccountButton();
+currentUser = data.session?.user || null;
+
+conversations = loadConversations();
+activeId = conversations[0]?.id || null;
+
+updateAccountButton();
+renderHistory();
+renderMessages();
 
   
+
 supabaseClient.auth.onAuthStateChange((event, session) => {
+  const previousUserId = currentUser?.id || null;
   currentUser = session?.user || null;
+  const newUserId = currentUser?.id || null;
+
   updateAccountButton();
+
+  if (previousUserId !== newUserId) {
+    conversations = loadConversations();
+    activeId = conversations[0]?.id || null;
+    renderHistory();
+    renderMessages();
+  }
 
   if (event === 'PASSWORD_RECOVERY') {
     const overlay = $('#nexoraAuthOverlay');
@@ -691,13 +745,10 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     if (overlay && authForm && recoveryForm) {
       overlay.hidden = false;
       overlay.style.display = 'flex';
-
       authForm.hidden = true;
       authForm.style.display = 'none';
-
       recoveryForm.hidden = false;
       recoveryForm.style.display = 'grid';
-
       $('#nexoraAuthTitle').textContent = 'Reimposta password';
       setAccountStatus('Link verificato. Inserisci la tua nuova password.');
     }
@@ -707,7 +758,6 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     setTimeout(() => syncAllConversations(), 0);
   }
 });
-
 
   if (currentUser) await syncAllConversations();
 }
