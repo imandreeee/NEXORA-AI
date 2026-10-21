@@ -30,7 +30,7 @@ const elements = {
   mobileMenu: $('#mobileMenu')
 };
 
-let supabase = null;
+let supabaseClient = null;
 let currentUser = null;
 let conversations = loadConversations();
 let activeId = conversations[0]?.id || null;
