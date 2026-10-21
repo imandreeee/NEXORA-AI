@@ -17,6 +17,18 @@
   
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#080811">
+  
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .catch((error) => {
+          console.error("NEXORA: errore Service Worker", error);
+        });
+    });
+  }
+</script>
+
 
 </head>
 <body>
