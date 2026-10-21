@@ -941,6 +941,8 @@ function bindEvents() {
  elements.form.addEventListener('submit', function (event) {
   event.preventDefault();
 
+   alert('GESTORE SUBMIT ESEGUITO');
+
   const message = elements.prompt.value.trim();
 
   if (!message || isSending) return;
