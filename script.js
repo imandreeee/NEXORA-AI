@@ -1,5 +1,7 @@
 'use strict';
 
+alert('SCRIPT.JS CARICATO');
+
 /*
  * NEXORA AI — frontend + Supabase Auth/cronologia
  * Usa SOLO la Publishable Key. Mai inserire la Secret Key nel frontend.
