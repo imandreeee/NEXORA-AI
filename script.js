@@ -283,6 +283,7 @@ async function syncConversation(chat) {
 }
 
 
+
 async function syncAllConversations() {
   if (!currentUser || !supabaseClient) return;
 
@@ -298,7 +299,7 @@ async function syncAllConversations() {
 
     if (error) throw error;
 
-    // Se nel frattempo è cambiato account, non applicare questi dati.
+    // Non applicare i dati se nel frattempo è cambiato account.
     if (currentUser?.id !== userId) return;
 
     const remote = (data || []).map(row => ({
@@ -309,10 +310,37 @@ async function syncAllConversations() {
       updatedAt: Date.parse(row.updated_at) || Date.now()
     }));
 
-    // Per gli account connessi, Supabase è la fonte della cronologia.
-    conversations = remote;
+    // Unisce cronologia locale e cloud senza scartare chat uniche.
+    const merged = new Map();
 
-    if (!getActiveConversation()) {
+    for (const chat of conversations) {
+      merged.set(chat.id, chat);
+    }
+
+    for (const cloudChat of remote) {
+      const localChat = merged.get(cloudChat.id);
+
+      if (!localChat) {
+        merged.set(cloudChat.id, cloudChat);
+        continue;
+      }
+
+      const localTime = Number(localChat.updatedAt) || 0;
+      const cloudTime = Number(cloudChat.updatedAt) || 0;
+
+      // Mantiene la versione più recente della conversazione.
+      if (cloudTime > localTime) {
+        merged.set(cloudChat.id, cloudChat);
+      }
+    }
+
+    conversations = Array.from(merged.values())
+      .sort((a, b) =>
+        (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)
+      );
+
+    // Mantiene la chat aperta se esiste ancora.
+    if (!conversations.some(chat => chat.id === activeId)) {
       activeId = conversations[0]?.id || null;
     }
 
@@ -320,7 +348,9 @@ async function syncAllConversations() {
     renderHistory();
     renderMessages();
 
-    setAccountStatus('Account sincronizzato');
+    setAccountStatus('Cronologia caricata');
+    
+    // Non caricare nuovamente la chat attiva se l'utente cambia account.
   } catch (error) {
     console.error('Errore caricamento cronologia:', error);
     setAccountStatus('Accesso attivo · errore sincronizzazione');
@@ -329,6 +359,7 @@ async function syncAllConversations() {
     );
   }
 }
+
 
 function setAccountStatus(text) {
   const status = $('#nexoraAccountStatus');
