@@ -7,7 +7,7 @@
  */
 const API_URL = 'https://nexora-ai-api.nexoraaaaiii-f43.workers.dev/';
 const SUPABASE_URL = 'https://ciuyzwuarbdsopncfpkd.supabase.co';
-const SITE_URL = 'https://imandreeee.github.io/NEXORA-AI/';
+const SITE_URL = 'https://nexora-ai-ar4.pages.dev/';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_1RTZH3BXnQClCbE_1Vqaqw_Jl16ISRA';
 const STORAGE_KEY = 'nexora-conversations-v1';
 
