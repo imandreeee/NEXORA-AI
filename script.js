@@ -266,13 +266,29 @@ function toDbRow(chat) {
   };
 }
 
+
 async function syncConversation(chat) {
-  if (!currentUser || !supabaseClient || !chat || syncing) return;
+  if (!currentUser || !supabaseClient || !chat) return;
+
+  // Se una sincronizzazione è in corso, attendi che termini.
+  while (syncing) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Interrompi se l'account è cambiato.
+    if (!currentUser || !supabaseClient) return;
+  }
+
+  // Controlla di nuovo l'account prima di inviare i dati.
+  if (!currentUser || !supabaseClient) return;
+
+  const userId = currentUser.id;
   syncing = true;
+
   try {
-    const { error } = await supabaseClient.from('conversations').upsert(
-      toDbRow(chat), { onConflict: 'id' }
-    );
+    const { error } = await supabaseClient
+      .from('conversations')
+      .upsert(toDbRow(chat), { onConflict: 'id' });
+
     if (error) throw error;
   } catch (error) {
     console.error('Sincronizzazione chat fallita:', error);
@@ -281,6 +297,7 @@ async function syncConversation(chat) {
     syncing = false;
   }
 }
+
 
 
 
