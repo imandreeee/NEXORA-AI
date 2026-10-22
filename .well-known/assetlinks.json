@@ -1,1 +1,15 @@
 
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.imandreeee.nexoraai",
+      "sha256_cert_fingerprints": [
+        "86:19:80:04:09:D3:EB:35:F7:74:60:27:53:2E:83:27:B5:B8:11:7D:6E:D4:8D:5A:7A:9A:72:D0:83:EF:DF:08"
+      ]
+    }
+  }
+]
