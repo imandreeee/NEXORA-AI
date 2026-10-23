@@ -380,30 +380,51 @@ async function syncAllConversations() {
   setAccountStatus('Sincronizzazione…');
 
   try {
-    const { data, error } = await supabaseClient
-      .from('conversations')
-      .select('id,user_id,title,messages,created_at,updated_at')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
+    // 1. Legge le conversazioni cloud e le eliminazioni registrate.
+    const [
+      { data: cloudData, error: cloudError },
+      { data: deletedData, error: deletedError }
+    ] = await Promise.all([
+      supabaseClient
+        .from('conversations')
+        .select('id,user_id,title,messages,created_at,updated_at')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false }),
 
-    if (error) throw error;
+      supabaseClient
+        .from('deleted_conversations')
+        .select('id')
+        .eq('user_id', userId)
+    ]);
 
-    // Non applicare i dati se nel frattempo è cambiato account.
+    if (cloudError) throw cloudError;
+    if (deletedError) throw deletedError;
+
+    // Non applica i dati se l'account è cambiato.
     if (currentUser?.id !== userId) return;
 
-    const remote = (data || []).map(row => ({
-      id: row.id,
-      title: row.title || 'Nuova conversazione',
-      messages: Array.isArray(row.messages) ? row.messages : [],
-      createdAt: Date.parse(row.created_at) || Date.now(),
-      updatedAt: Date.parse(row.updated_at) || Date.now()
-    }));
+    const deletedIds = new Set(
+      (deletedData || []).map(row => row.id)
+    );
 
-    // Unisce cronologia locale e cloud senza scartare chat uniche.
+    // 2. Esclude tutte le conversazioni eliminate.
+    const remote = (cloudData || [])
+      .filter(row => !deletedIds.has(row.id))
+      .map(row => ({
+        id: row.id,
+        title: row.title || 'Nuova conversazione',
+        messages: Array.isArray(row.messages) ? row.messages : [],
+        createdAt: Date.parse(row.created_at) || Date.now(),
+        updatedAt: Date.parse(row.updated_at) || Date.now()
+      }));
+
+    // 3. Unisce locale e cloud ignorando le chat eliminate.
     const merged = new Map();
 
     for (const chat of conversations) {
-      merged.set(chat.id, chat);
+      if (!deletedIds.has(chat.id)) {
+        merged.set(chat.id, chat);
+      }
     }
 
     for (const cloudChat of remote) {
@@ -417,18 +438,18 @@ async function syncAllConversations() {
       const localTime = Number(localChat.updatedAt) || 0;
       const cloudTime = Number(cloudChat.updatedAt) || 0;
 
-      // Mantiene la versione più recente della conversazione.
       if (cloudTime > localTime) {
         merged.set(cloudChat.id, cloudChat);
       }
     }
 
-    conversations = Array.from(merged.values())
-      .sort((a, b) =>
-        (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)
-      );
+    // 4. Ordina dalla più recente alla meno recente.
+    conversations = Array.from(merged.values()).sort(
+      (a, b) =>
+        (Number(b.updatedAt) || 0) -
+        (Number(a.updatedAt) || 0)
+    );
 
-    // Mantiene la chat aperta se esiste ancora.
     if (!conversations.some(chat => chat.id === activeId)) {
       activeId = conversations[0]?.id || null;
     }
@@ -438,16 +459,16 @@ async function syncAllConversations() {
     renderMessages();
 
     setAccountStatus('Cronologia caricata');
-    
-    // Non caricare nuovamente la chat attiva se l'utente cambia account.
   } catch (error) {
     console.error('Errore caricamento cronologia:', error);
     setAccountStatus('Accesso attivo · errore sincronizzazione');
     alert(
-      'Accesso effettuato, ma non riesco a caricare le chat da Supabase. Controlla URL, Publishable Key e policy RLS.'
+      'Accesso effettuato, ma non riesco a caricare le chat. Controlla la connessione e le policy RLS di Supabase.'
     );
   }
 }
+
+
 
 
 function setAccountStatus(text) {
