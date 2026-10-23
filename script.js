@@ -364,7 +364,7 @@ async function syncConversation(chat) {
     if (error) throw error;
   } catch (error) {
     console.error('Sincronizzazione chat fallita:', error);
-    setAccountStatus('Accesso attivo · sincronizzazione non riuscita');
+    ('Accesso attivo · sincronizzazione non riuscita');
   } finally {
     syncing = false;
   }
@@ -377,7 +377,7 @@ async function syncAllConversations() {
   if (!currentUser || !supabaseClient) return;
 
   const userId = currentUser.id;
-  setAccountStatus('Sincronizzazione…');
+  ('Sincronizzazione…');
 
   try {
     // 1. Legge le conversazioni cloud e le eliminazioni registrate.
@@ -458,10 +458,10 @@ async function syncAllConversations() {
     renderHistory();
     renderMessages();
 
-    setAccountStatus('Cronologia caricata');
+    ('Cronologia caricata');
   } catch (error) {
     console.error('Errore caricamento cronologia:', error);
-    setAccountStatus('Accesso attivo · errore sincronizzazione');
+    ('Accesso attivo · errore sincronizzazione');
     alert(
       'Accesso effettuato, ma non riesco a caricare le chat. Controlla la connessione e le policy RLS di Supabase.'
     );
@@ -471,7 +471,7 @@ async function syncAllConversations() {
 
 
 
-function setAccountStatus(text) {
+function (text) {
   const status = $('#nexoraAccountStatus');
   if (status) status.textContent = text;
 }
@@ -571,7 +571,7 @@ function buildAccountUI() {
     const email = emailInput.value.trim();
 
     if (!email) {
-      setAccountStatus('Inserisci prima la tua email.');
+      ('Inserisci prima la tua email.');
       emailInput.focus();
       return;
     }
@@ -579,7 +579,7 @@ function buildAccountUI() {
     void (async () => {
       try {
         forgotButton.disabled = true;
-        setAccountStatus('Invio email di recupero…');
+        ('Invio email di recupero…');
 
         const { error } = await supabaseClient.auth.resetPasswordForEmail(
           email,
@@ -641,11 +641,11 @@ function buildAccountUI() {
 
       setAccountStatus('Password aggiornata correttamente.');
     } catch (error) {
-      console.error('Errore aggiornamento password:', error);
-      setAccountStatus(
-        'Non è stato possibile aggiornare la password. Riapri il link di recupero e riprova.'
-      );
-    } finally {
+  console.error('Errore aggiornamento password:', error);
+  setAccountStatus(
+    'Errore Supabase: ' + (error.message || error.code || 'errore sconosciuto')
+  );
+} finally {
       savePasswordButton.disabled = false;
     }
   });
