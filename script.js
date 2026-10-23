@@ -171,8 +171,10 @@ async function deleteConversation(id) {
   renderMessages();
 }
 
+
 function renderHistory() {
   elements.history.replaceChildren();
+
   const ordered = [...conversations]
     .filter(chat => chat.messages.length > 0)
     .sort((a, b) => b.updatedAt - a.updatedAt);
@@ -187,15 +189,19 @@ function renderHistory() {
 
   for (const chat of ordered) {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:4px;width:100%;';
+    row.style.cssText =
+      'display:flex;align-items:center;gap:4px;width:100%;';
 
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'history-item';
     button.textContent = '◇ ' + chat.title;
     button.title = chat.title;
-    button.style.cssText = 'flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;';
+    button.style.cssText =
+      'flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;';
+
     if (chat.id === activeId) button.classList.add('active');
+
     button.addEventListener('click', () => {
       if (isSending) return;
       activeId = chat.id;
@@ -204,18 +210,51 @@ function renderHistory() {
       showView('chat');
     });
 
+    const rename = document.createElement('button');
+    rename.type = 'button';
+    rename.textContent = '✎';
+    rename.title = 'Rinomina conversazione';
+    rename.setAttribute('aria-label', 'Rinomina ' + chat.title);
+    rename.style.cssText =
+      'flex:0 0 30px;min-width:30px;border:0;background:transparent;color:inherit;cursor:pointer;font-size:16px;border-radius:8px;';
+
+    rename.addEventListener('click', () => {
+      const newTitle = prompt('Nuovo nome della conversazione:', chat.title);
+
+      if (newTitle === null) return;
+
+      const title = newTitle.trim().replace(/\s+/g, ' ');
+
+      if (!title) {
+        alert('Il nome della conversazione non può essere vuoto.');
+        return;
+      }
+
+      chat.title = title.slice(0, 80);
+      chat.updatedAt = Date.now();
+
+      saveConversations();
+      renderHistory();
+
+      // Aggiorna la chat anche sul cloud, se l'utente è autenticato.
+      void syncConversation(chat);
+    });
+
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.textContent = '×';
     remove.title = 'Elimina conversazione';
     remove.setAttribute('aria-label', 'Elimina ' + chat.title);
-    remove.style.cssText = 'flex:0 0 30px;min-width:30px;border:0;background:transparent;color:inherit;cursor:pointer;font-size:20px;border-radius:8px;';
+    remove.style.cssText =
+      'flex:0 0 30px;min-width:30px;border:0;background:transparent;color:inherit;cursor:pointer;font-size:20px;border-radius:8px;';
+
     remove.addEventListener('click', () => deleteConversation(chat.id));
 
-    row.append(button, remove);
+    row.append(button, rename, remove);
     elements.history.appendChild(row);
   }
 }
+
 
 function showView(view) {
   elements.chatView.classList.toggle('hidden', view !== 'chat');
