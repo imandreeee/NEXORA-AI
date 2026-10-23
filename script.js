@@ -148,16 +148,44 @@ function renderMessages() {
   elements.messages.scrollTop = elements.messages.scrollHeight;
 }
 
+
 async function deleteConversation(id) {
   if (isSending) return;
+
   const chat = conversations.find(item => item.id === id);
   if (!chat) return;
-  if (!window.confirm(`Eliminare la conversazione "${chat.title}"?`)) return;
+
+  if (!window.confirm(`Eliminare la conversazione "${chat.title}"?`)) {
+    return;
+  }
 
   if (currentUser && supabaseClient) {
-    const { error } = await supabaseClient.from('conversations')
-      .delete().eq('id', id).eq('user_id', currentUser.id);
-    if (error) {
+    const userId = currentUser.id;
+
+    try {
+      // Registra l'eliminazione prima di cancellare la conversazione.
+      const { error: tombstoneError } = await supabaseClient
+        .from('deleted_conversations')
+        .upsert(
+          {
+            id,
+            user_id: userId,
+            deleted_at: new Date().toISOString()
+          },
+          { onConflict: 'user_id,id' }
+        );
+
+      if (tombstoneError) throw tombstoneError;
+
+      // Elimina la conversazione dal cloud.
+      const { error: deleteError } = await supabaseClient
+        .from('conversations')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+
+      if (deleteError) throw deleteError;
+    } catch (error) {
       console.error('Errore eliminazione Supabase:', error);
       alert('Non sono riuscito a eliminare la chat dal cloud. Riprova.');
       return;
@@ -165,11 +193,16 @@ async function deleteConversation(id) {
   }
 
   conversations = conversations.filter(item => item.id !== id);
-  if (activeId === id) activeId = conversations[0]?.id || null;
+
+  if (activeId === id) {
+    activeId = conversations[0]?.id || null;
+  }
+
   saveConversations();
   renderHistory();
   renderMessages();
 }
+
 
 
 function renderHistory() {
