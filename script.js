@@ -564,6 +564,107 @@ function buildAccountUI() {
   const forgotButton = $('#nexoraForgotPassword');
   const savePasswordButton = $('#nexoraSavePassword');
 
+  const cancelRecoveryButton = $('#nexoraCancelRecovery');
+  const closeButton = $('#nexoraAuthClose');
+
+  function showRecoveryForm() {
+    const email = emailInput.value.trim();
+
+    if (!email) {
+      setAccountStatus('Inserisci prima la tua email.');
+      emailInput.focus();
+      return;
+    }
+
+    void (async () => {
+      try {
+        forgotButton.disabled = true;
+        setAccountStatus('Invio email di recupero…');
+
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(
+          email,
+          { redirectTo: SITE_URL }
+        );
+
+        if (error) throw error;
+
+        setAccountStatus(
+          'Email inviata. Apri il link ricevuto per scegliere una nuova password.'
+        );
+      } catch (error) {
+        console.error('Errore recupero password:', error);
+        setAccountStatus(
+          'Impossibile inviare l’email di recupero. Controlla l’indirizzo e riprova.'
+        );
+      } finally {
+        forgotButton.disabled = false;
+      }
+    })();
+  }
+
+  forgotButton.addEventListener('click', showRecoveryForm);
+
+  savePasswordButton.addEventListener('click', async event => {
+    event.preventDefault();
+
+    const newPassword = $('#nexoraNewPassword').value;
+    const confirmPassword = $('#nexoraConfirmPassword').value;
+
+    if (newPassword.length < 6) {
+      setAccountStatus('La password deve contenere almeno 6 caratteri.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setAccountStatus('Le password non coincidono.');
+      return;
+    }
+
+    try {
+      savePasswordButton.disabled = true;
+      setAccountStatus('Salvataggio nuova password…');
+
+      const { error } = await supabaseClient.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      $('#nexoraNewPassword').value = '';
+      $('#nexoraConfirmPassword').value = '';
+
+      $('#nexoraRecoveryForm').hidden = true;
+      $('#nexoraRecoveryForm').style.display = 'none';
+      $('#nexoraAuthForm').hidden = false;
+      $('#nexoraAuthForm').style.display = 'grid';
+      $('#nexoraAuthTitle').textContent = 'Il tuo account NEXORA';
+
+      setAccountStatus('Password aggiornata correttamente.');
+    } catch (error) {
+      console.error('Errore aggiornamento password:', error);
+      setAccountStatus(
+        'Non è stato possibile aggiornare la password. Riapri il link di recupero e riprova.'
+      );
+    } finally {
+      savePasswordButton.disabled = false;
+    }
+  });
+
+  cancelRecoveryButton.addEventListener('click', () => {
+    $('#nexoraRecoveryForm').hidden = true;
+    $('#nexoraRecoveryForm').style.display = 'none';
+    $('#nexoraAuthForm').hidden = false;
+    $('#nexoraAuthForm').style.display = 'grid';
+    $('#nexoraAuthTitle').textContent = 'Il tuo account NEXORA';
+    setAccountStatus('');
+  });
+
+  closeButton.addEventListener('click', () => {
+    const overlay = $('#nexoraAuthOverlay');
+    overlay.hidden = true;
+    overlay.style.display = 'none';
+  });
+
   function openOverlay() {
     overlay.hidden = false;
     overlay.style.display = 'flex';
